@@ -5,15 +5,14 @@ import org.embeddedt.embeddium.impl.render.chunk.map.ChunkTracker;
 
 import com.cardinalstar.cubicchunks.util.HashMap3D;
 import com.cardinalstar.cubicchunks.util.HashSet3D;
-import com.gtnewhorizons.angelica.config.AngelicaConfig;
 
 /** Tracks 3D cubes instead of columns; the inherited 2D state stays empty. */
 public class CubeStatusTracker extends ChunkTracker {
 
     /// Cubes that have been synced to the client and are currently loaded.
     private final HashSet3D loadedCubes = new HashSet3D();
-    /// Cubes that have their neighbours loaded (as needed) and are ready to be rendered.
-    private final HashSet3D validCubes = new HashSet3D();
+    /// Cubes that have been attached to the render section manager.
+    private final HashSet3D attachedCubes = new HashSet3D();
 
     private final HashMap3D<PendingState> changedCubes = new HashMap3D<>();
 
@@ -22,78 +21,27 @@ public class CubeStatusTracker extends ChunkTracker {
         Remove
     }
 
-    /// When true, adjacent cubes will not be checked.
-    private boolean fastMode = false;
-
-    public CubeStatusTracker() {
-
-    }
-
-    public void setFastMode(boolean fastMode) {
-        this.fastMode = fastMode;
-
-        this.loadedCubes.forEach(this::pollCube);
-    }
-
-    public boolean isFastModeEnabled() {
-        return fastMode;
-    }
-
     public void onCubeLoaded(int cubeX, int cubeY, int cubeZ) {
         if (loadedCubes.add(cubeX, cubeY, cubeZ)) {
-            onCubeChanged(cubeX, cubeY, cubeZ);
+            pollCube(cubeX, cubeY, cubeZ);
         }
     }
 
     public void onCubeUnloaded(int cubeX, int cubeY, int cubeZ) {
         if (loadedCubes.remove(cubeX, cubeY, cubeZ)) {
-            onCubeChanged(cubeX, cubeY, cubeZ);
-        }
-    }
-
-    private void onCubeChanged(int cubeX, int cubeY, int cubeZ) {
-        pollCube(cubeX, cubeY, cubeZ);
-
-        if (!fastMode) {
-            for (int dz = -1; dz <= 1; dz++) {
-                for (int dy = -1; dy <= 1; dy++) {
-                    for (int dx = -1; dx <= 1; dx++) {
-                        if (dx == 0 && dy == 0 && dz == 0) continue;
-
-                        pollCube(cubeX + dx, cubeY + dy, cubeZ + dz);
-                    }
-                }
-            }
+            pollCube(cubeX, cubeY, cubeZ);
         }
     }
 
     private void pollCube(int cubeX, int cubeY, int cubeZ) {
-        boolean renderable = canRender(cubeX, cubeY, cubeZ);
-        boolean isRendering = validCubes.contains(cubeX, cubeY, cubeZ);
+        boolean renderable = loadedCubes.contains(cubeX, cubeY, cubeZ);
+        boolean isRendering = attachedCubes.contains(cubeX, cubeY, cubeZ);
 
         if (renderable != isRendering) {
             changedCubes.put(cubeX, cubeY, cubeZ, renderable ? PendingState.Add : PendingState.Remove);
         } else {
             changedCubes.remove(cubeX, cubeY, cubeZ);
         }
-    }
-
-    private boolean canRender(int cubeX, int cubeY, int cubeZ) {
-        if (!loadedCubes.contains(cubeX, cubeY, cubeZ)) return false;
-
-        if (!fastMode) {
-            for (int dz = -1; dz <= 1; dz++) {
-                for (int dy = -1; dy <= 1; dy++) {
-                    for (int dx = -1; dx <= 1; dx++) {
-                        if (dx == 0 && dy == 0 && dz == 0) continue;
-
-                        if (!loadedCubes.contains(cubeX + dx, cubeY + dy, cubeZ + dz)) return false;
-                    }
-                }
-            }
-        }
-
-        return true;
     }
 
     @Override
@@ -107,23 +55,19 @@ public class CubeStatusTracker extends ChunkTracker {
     }
 
     public void forEachReady(RenderSectionManager renderSectionManager) {
-        if (this.isFastModeEnabled() != AngelicaConfig.useVanillaChunkTracking) {
-            setFastMode(AngelicaConfig.useVanillaChunkTracking);
-        }
-
         changedCubes.forEach((x, y, z, state) -> {
             boolean ready = state == PendingState.Add;
 
             if (ready) {
-                validCubes.add(x, y, z);
+                attachedCubes.add(x, y, z);
             } else {
-                validCubes.remove(x, y, z);
+                attachedCubes.remove(x, y, z);
             }
         });
 
         changedCubes.clear();
 
-        for (var pos : validCubes.fastEntryIterable()) {
+        for (var pos : attachedCubes.fastEntryIterable()) {
             int x = pos.getX();
             int y = pos.getY();
             int z = pos.getZ();
@@ -133,18 +77,14 @@ public class CubeStatusTracker extends ChunkTracker {
     }
 
     public void forEachEvent(RenderSectionManager renderSectionManager) {
-        if (this.isFastModeEnabled() != AngelicaConfig.useVanillaChunkTracking) {
-            setFastMode(AngelicaConfig.useVanillaChunkTracking);
-        }
-
         changedCubes.forEach((x, y, z, state) -> {
             boolean ready = state == PendingState.Add;
 
             if (ready) {
-                validCubes.add(x, y, z);
+                attachedCubes.add(x, y, z);
                 renderSectionManager.onSectionAdded(x, y, z);
             } else {
-                validCubes.remove(x, y, z);
+                attachedCubes.remove(x, y, z);
                 renderSectionManager.onSectionRemoved(x, y, z);
             }
         });
