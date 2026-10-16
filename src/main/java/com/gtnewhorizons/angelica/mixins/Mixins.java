@@ -479,7 +479,10 @@ public enum Mixins implements IMixins {
     CELERITAS_CUBIC_CHUNKS(new MixinBuilder()
         .setPhase(Phase.EARLY)
         .addRequiredMod(TargetedMod.CUBIC_CHUNKS)
-        .addClientMixins("celeritas.terrain.MixinCubicChunksCube")
+        .addClientMixins(
+            "celeritas.terrain.MixinCubicChunksCube",
+            "celeritas.terrain.MixinOcclusionCuller_CubicChunks"
+        )
     ),
 
     CELERITAS_COLORED_LIGHT(new MixinBuilder("Colored light infrastructure for celeritas light pipeline")
