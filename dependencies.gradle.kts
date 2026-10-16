@@ -106,8 +106,14 @@ DependencyHandlerScope.of(dependencies).apply {
     shadowImplementation(libs.antlr4.runtime)
     compileOnly(libs.ant)
 
-    // Celeritas (isTransitive=false: deps provided by GTNHLib/runtime)
-    embedOnly(libs.celeritas.common) { isTransitive = false }
+    // Celeritas (isTransitive=false: deps provided by GTNHLib/runtime). The optional path is used by the RWG
+    // development workspace to exercise a sibling Celeritas checkout without publishing an artifact globally.
+    val localCeleritasJar = providers.gradleProperty("localCeleritasJar").orNull
+    if (localCeleritasJar != null) {
+        embedOnly(files(localCeleritasJar))
+    } else {
+        embedOnly(libs.celeritas.common) { isTransitive = false }
+    }
 
     // Because who doesn't want NEI
     devOnlyNonPublishable("com.github.GTNewHorizons:NotEnoughItems:2.8.109-GTNH:dev")

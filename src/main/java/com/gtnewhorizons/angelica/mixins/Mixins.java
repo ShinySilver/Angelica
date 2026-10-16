@@ -480,8 +480,7 @@ public enum Mixins implements IMixins {
         .setPhase(Phase.EARLY)
         .addRequiredMod(TargetedMod.CUBIC_CHUNKS)
         .addClientMixins(
-            "celeritas.terrain.MixinCubicChunksCube",
-            "celeritas.terrain.MixinOcclusionCuller_CubicChunks"
+            "celeritas.terrain.MixinCubicChunksCube"
         )
     ),
 

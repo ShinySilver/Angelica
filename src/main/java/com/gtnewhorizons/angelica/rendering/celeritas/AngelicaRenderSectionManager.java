@@ -107,6 +107,11 @@ public class AngelicaRenderSectionManager extends RenderSectionManager {
     }
 
     @Override
+    protected boolean shouldUseSparseSectionTraversal() {
+        return ModStatus.isCubicChunksLoaded && this.world instanceof ICubicWorld;
+    }
+
+    @Override
     protected boolean useRasterOcclusionCulling() {
         return false;
     }
