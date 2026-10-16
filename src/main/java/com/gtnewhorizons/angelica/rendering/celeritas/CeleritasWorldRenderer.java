@@ -190,7 +190,7 @@ public class CeleritasWorldRenderer extends SimpleWorldRenderer<WorldClient, Ang
     @Override
     public int getMinimumBuildHeight() {
         if (ModStatus.isCubicChunksLoaded) {
-            return CubicChunksAPI.getMinHeight(this.world);
+            return CubicChunksAPI.getMinRenderHeight(this.world);
         } else {
             return 0;
         }
@@ -199,7 +199,7 @@ public class CeleritasWorldRenderer extends SimpleWorldRenderer<WorldClient, Ang
     @Override
     public int getMaximumBuildHeight() {
         if (ModStatus.isCubicChunksLoaded) {
-            return CubicChunksAPI.getMaxHeight(this.world);
+            return CubicChunksAPI.getMaxRenderHeight(this.world);
         } else {
             return 256;
         }

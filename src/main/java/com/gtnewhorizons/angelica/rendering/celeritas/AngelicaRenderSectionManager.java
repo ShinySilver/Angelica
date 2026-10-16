@@ -81,8 +81,8 @@ public class AngelicaRenderSectionManager extends RenderSectionManager {
         final int maxSection;
 
         if (ModStatus.isCubicChunksLoaded && world instanceof ICubicWorld) {
-            minSection = CubicChunksAPI.getMinSectionY(world);
-            maxSection = CubicChunksAPI.getMaxSectionYExclusive(world);
+            minSection = CubicChunksAPI.getMinRenderSectionY(world);
+            maxSection = CubicChunksAPI.getMaxRenderSectionYExclusive(world);
         } else {
             minSection = 0;
             maxSection = 16;
