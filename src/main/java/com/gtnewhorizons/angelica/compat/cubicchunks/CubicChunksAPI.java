@@ -12,9 +12,9 @@ import com.gtnewhorizons.angelica.compat.mojang.ChunkSectionPos;
 
 public class CubicChunksAPI {
 
-    /** Fixed cubic render range: Y -1024 inclusive through +1024 exclusive, expressed in 16-block sections. */
-    public static final int MIN_RENDER_SECTION_Y = -64;
-    public static final int MAX_RENDER_SECTION_Y_EXCLUSIVE = 64;
+    /** Fixed cubic render range: Y -256 inclusive through +512 exclusive, expressed in 16-block sections. */
+    public static final int MIN_RENDER_SECTION_Y = -16;
+    public static final int MAX_RENDER_SECTION_Y_EXCLUSIVE = 32;
 
     public static ExtendedBlockStorage getCubeStorage(World world, int x, int y, int z) {
         Cube cube = ((ICubeProviderInternal) world.getChunkProvider()).getLoadedCube(x, y, z);
