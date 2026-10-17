@@ -9,10 +9,10 @@ import org.spongepowered.asm.mixin.injection.ModifyConstant;
 public class MixinGameSettings {
     /**
      * @author embeddedt
-     * @reason Angelica's Renderers supports up to 32 chunks
+     * @reason Angelica's renderers support up to 64 chunks
      */
     @ModifyConstant(method = "<init>(Lnet/minecraft/client/Minecraft;Ljava/io/File;)V", constant = @Constant(floatValue = 16.0f))
     private float increaseMaxDistance(float old) {
-        return 32.0f;
+        return 64.0f;
     }
 }
