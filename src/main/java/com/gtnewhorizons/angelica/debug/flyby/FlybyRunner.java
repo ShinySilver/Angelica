@@ -281,15 +281,7 @@ public final class FlybyRunner {
             case WARMUP -> {
                 this.applyPosition(player, 0);
                 if (this.jfr && this.tick == Math.max(0, this.warmupTicks - 40)) {
-                    final String error;
-                    synchronized (AsprofRecorder.class) {
-                        error = AsprofRecorder.start(this.route.id(), SystemProperties.PROFILE_OPTS);
-                        if (error == null) this.recordingId = AsprofRecorder.recordingId();
-                    }
-                    if (error != null) {
-                        LOGGER.warn("Flyby: failed to start async-profiler: {}", error);
-                        player.addChatMessage(new ChatComponentText(EnumChatFormatting.RED + "[Angelica] Flyby: failed to start async-profiler: " + error));
-                    }
+                    this.startRecording(player);
                 }
                 if (++this.tick >= this.warmupTicks) {
                     this.tick = 0;
@@ -534,7 +526,23 @@ public final class FlybyRunner {
         return "flyby " + ((phase & 1) != 0 ? "turn" : "leg") + " " + (phase >> 1);
     }
 
+    private void startRecording(EntityClientPlayerMP player) {
+        final String error;
+        synchronized (AsprofRecorder.class) {
+            error = AsprofRecorder.start(this.route.id(), SystemProperties.PROFILE_OPTS);
+            if (error == null) this.recordingId = AsprofRecorder.recordingId();
+        }
+        if (error == null) return;
+        LOGGER.warn("Flyby: failed to start async-profiler: {}", error);
+        if (player != null) {
+            player.addChatMessage(new ChatComponentText(
+                EnumChatFormatting.RED + "[Angelica] Flyby: failed to start async-profiler: " + error));
+        }
+    }
+
     private void beginMeasuring(Minecraft mc) {
+        // A zero-tick warmup skips the WARMUP state, so it must start profiling here.
+        if (this.jfr && this.recordingId == 0L) this.startRecording(mc.thePlayer);
         this.state = State.RUNNING;
         Tracy.sectionLeave(this.warmupSection);
         this.warmupSection = 0L;
@@ -650,6 +658,15 @@ public final class FlybyRunner {
 
         this.discardWorldChanges(server);
         final double feetY = this.flightFeetY(server, request);
+        // A fixed-origin graphical audit must move the authoritative player before measurement. Moving only the
+        // client camera leaves chunk delivery centred on the saved server position, so terrain at the audit origin
+        // never reaches Celeritas and a valid first-draw marker is impossible.
+        final EntityPlayerMP serverPlayer = server.getConfigurationManager().func_152612_a(request.playerName());
+        if (serverPlayer != null && this.fixedOrigin != null) {
+            serverPlayer.setPositionAndUpdate(request.originX(), feetY, request.originZ());
+            LOGGER.info("Flyby: authoritative player positioned at audit origin {} {} {}",
+                request.originX(), feetY, request.originZ());
+        }
         request.feetY().complete(feetY);
         this.applyFreeze(server);
         if (request.scene()) {
